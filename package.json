@@ -1,0 +1,20 @@
+{
+  "name": "land-book",
+  "version": "1.0.0",
+  "description": "scrape data from land-book",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "land-book",
+    "scraper",
+    "cheerio"
+  ],
+  "author": "colleowino <collewino@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^0.22.0",
+    "request": "^2.79.0"
+  }
+}
