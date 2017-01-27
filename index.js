@@ -1,21 +1,32 @@
 var request = require('request');
 var cheerio = require('cheerio');
+var $q = require('q');
 
 var url = 'https://land-book.com/websites/179';
-//parse body
-var body = '';
 
-request(url, function(err,resp,body){	
-	console.log(body);
-});
+function loadPage(id){
 
-var loadPage = new Promise(function(resolve,reject){
-	request(url, function(err,resp,body){	
-		if(!err)
-			resolve(body);
+	return new Promise(function(resolve, reject){
+		var url = 'https://land-book.com/websites/'+id;
+		request(url,function(err,resp,body){
+			if(!err)
+				console.log("loaded: "+id);
+				resolve(50);
+		});
+
 	});
-});
+}
 
-loadPage.then(function(response){
-	 console.log("Success!", response);
-});
+var promises = [];
+
+for(var i=10; i < 15; i++){
+	promises.push(loadPage(i));
+}
+
+//$q.all(promises).then(function(response){
+	//console.log(response);
+	//console.log("app pages downloaded");
+//});
+
+
+
