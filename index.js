@@ -25,6 +25,14 @@ function fixUrlPrefix(url){
 	return url;
 }
 
+function parseBody(body){
+	var $ = cheerio.load(body);
+	//var title = $('h2').text();
+	//var homepage = $('.icon-world + a').text();
+	var img = $('#website-screenshot').attr('src');
+	return fixUrlPrefix(img);
+}
+
 // should start at 179
 function loadPage(id){
 	return new Promise(function(resolve, reject){
@@ -32,31 +40,26 @@ function loadPage(id){
 		request(url,function(err,resp,body){
 			if(!err)
 				console.log("loaded: "+id);
-				resolve(body);
+				resolve(parseBody(body));
 		});
 
 	});
 }
 
+var pgNum = 180;
 
-
-function parseBody(body){
-	var $ = cheerio.load(body);
-	//var title = $('h2').text();
-	//var homepage = $('.icon-world + a').text();
-	var img = $('#website-screenshot').attr('src');
-	console.log(img);
-}
-
-function getExtName(url){
-	return path.extname(url).split('?')[0];
-}
+loadPage(pgNum).then(function(imgLink){
+	console.log(imgLink);
+	downloadImage(imgLink,pgNum);
+});
 
 function downloadImage(url,fileId){
 	var downloadDir = 'downloads';
 
 	if(!fs.existsSync(downloadDir))
 		fs.mkdirSync(downloadDir);
+
+	console.log("fileId:"+fileId);
 
 	return new Promise(function(resolve,reject){
 		var filename = path.join(downloadDir,fileId.toString() + getExtName(url));
