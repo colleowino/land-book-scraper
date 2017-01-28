@@ -25,6 +25,23 @@ function fixUrlPrefix(url){
 	return url;
 }
 
+function downloadImage(url,fileId){
+	var downloadDir = 'downloads';
+
+	if(!fs.existsSync(downloadDir))
+		fs.mkdirSync(downloadDir);
+
+	return new Promise(function(resolve,reject){
+		var filename = path.join(downloadDir,fileId.toString() + getExtName(url));
+		
+		request(fixUrlPrefix(url)).pipe(fs.createWriteStream(filename)).on('close',function(){
+			resolve(fileId);
+		});
+
+	});
+
+}
+
 function parseBody(body){
 	var $ = cheerio.load(body);
 	//var title = $('h2').text();
@@ -39,38 +56,45 @@ function loadPage(id){
 		var url = 'https://land-book.com/websites/'+id;
 		request(url,function(err,resp,body){
 			if(!err)
-				console.log("loaded: "+id);
+				console.log("loaded page: "+id);
 				resolve(parseBody(body));
 		});
 
 	});
 }
 
-var pgNum = 180;
+var pgNum = 181;
 
-loadPage(pgNum).then(function(imgLink){
-	console.log(imgLink);
-	downloadImage(imgLink,pgNum);
-});
+// load the pages
 
-function downloadImage(url,fileId){
-	var downloadDir = 'downloads';
-
-	if(!fs.existsSync(downloadDir))
-		fs.mkdirSync(downloadDir);
-
-	console.log("fileId:"+fileId);
-
-	return new Promise(function(resolve,reject){
-		var filename = path.join(downloadDir,fileId.toString() + getExtName(url));
-		
-		request(fixUrlPrefix(url)).pipe(fs.createWriteStream(filename)).on('close',function(){
-			resolve(fileId);
+function readPageDownloadImage(pgNum){
+	return new Promise(function (resolve, reject){
+		loadPage(pgNum).then(function(imgLink){
+			if(downloadImage(imgLink,pgNum)){
+				resolve(pgNum+1);
+			}else{
+				console.log("couldn't /read download image");
+				reject(-1);
+			}
 		});
-
 	});
-
 }
+
+//readPageDownloadImage(183).then(function(imgId){
+	//console.log(imgId);
+//});
+
+//var todownload = [];
+
+//function getpromises(pg,groupsize){
+	//var maxitems = (pg * groupsize);
+	//var firstitem = max - (groupsize - 1);
+
+//}
+
+
+
+
 
 //for(var i=10; i < 15; i++){
 	//promises.push(loadPage(i));
