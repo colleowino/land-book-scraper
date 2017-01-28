@@ -42,13 +42,13 @@ function downloadImage(url,fileId){
 
 }
 
-function parseBody(body){
+function parseBody(id,body){
 	var $ = cheerio.load(body);
 	var title = $('h2').text();
 	var homepage = $('.icon-world + a').text();
 	var img = $('#website-screenshot').attr('src');
 
-	return [title,fixUrlPrefix(img),homepage];
+	return {'id':id,'title':title,'imgurl':fixUrlPrefix(img),'url':homepage};
 }
 
 // should start at 179 -> 2639 , divide to get per page
@@ -58,7 +58,7 @@ function loadPage(id){
 		request(url,function(err,resp,body){
 			//if(!err){
 				//console.log("loaded page: "+id);
-				resolve(parseBody(body));
+				resolve(parseBody(id,body));
 			//}
 			//else{
 				//console.log("unable to load page: "+id);
@@ -69,60 +69,40 @@ function loadPage(id){
 	});
 }
 
-
-// load the pages
-function readPageDownloadImage(pgNum){
-	return new Promise(function (resolve, reject){
-		loadPage(pgNum).then(function(imgLink){
-
-			if(imgLink){
-				downloadImage(imgLink,pgNum);
-				resolve(pgNum+1);
-			}else{
-				console.log("couldn't read image link");
-				reject(-1);
-			}
-
-		});
-	});
-}
-
-var pgNum = 11;
-
-//readPageDownloadImage(pgNum).then(function(imgId){
-	//console.log(imgId);
-//});
-
 var todownload = [];
 
-function getpromises(pg,groupsize){
+function getPgPromises(pg,groupsize){
 	var maxitems = (pg * groupsize);
 	var firstitem = maxitems - (groupsize - 1);
 	console.log(firstitem, maxitems);
 
 	for(var i = firstitem; i <= maxitems; i++){
 		todownload.push(loadPage(i));
-		//console.log(i);
 	}
 }
 
+
 // starting page
-getpromises(19, 10);
+getPgPromises(19, 10);
+var pgNum = 11;
 
 $q.all(todownload).then(function(imgLinks){
 	return imgLinks;
 }).then( function(data){
-	console.log(data);
-	console.log("about to download images");
+
+	//var links = data.map(function(page){
+		//return page[1];
+	//});
+
+	//downloadImage(links[0],51);
+
+	var imgPromises = [];
+
+	data.forEach(function(site){
+		console.log(site.title);
+	});
+
+	//console.log(links);
+	//console.log("about to download images");
 });
-
-
-//loadPage(2080).then(function(body){
-	//try{
-		//parseBody(body);
-	//}
-	//catch(err){
-		//console.log(err);
-	//}
-//});
 
