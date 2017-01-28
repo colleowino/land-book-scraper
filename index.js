@@ -4,6 +4,17 @@ var $q = require('q');
 var fs = require('fs');
 var path = require('path');
 
+/* TODO: move test methods to test suit */
+function testImageDownloader(){
+	var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292'
+
+	downloadImage(imgLink,1).then(function(result,reject){
+		console.log('downloaded '+result);
+	});
+}
+
+testImageDownloader();
+
 // should start at 179
 function loadPage(id){
 	return new Promise(function(resolve, reject){
@@ -54,12 +65,6 @@ function downloadImage(url,fileId){
 	});
 
 }
-
-var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292'
-
-downloadImage(imgLink,1).then(function(result,reject){
-	console.log('downloaded '+result);
-});
 
 //for(var i=10; i < 15; i++){
 	//promises.push(loadPage(i));
