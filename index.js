@@ -17,6 +17,13 @@ function getExtName(url){
 	return path.extname(url).split('?')[0];
 }
 
+// landbook images seem to lack 'http:' prefix
+function fixUrlPrefix(url){
+	if(!url.includes('http:')){
+		url = 'http:'+url;
+	}
+	return url;
+}
 
 // should start at 179
 function loadPage(id){
@@ -43,15 +50,6 @@ function parseBody(body){
 
 function getExtName(url){
 	return path.extname(url).split('?')[0];
-}
-
-// landbook images seem to lack 'http:' prefix
-function fixUrlPrefix(url){
-	console.log(url);
-	if(!url.includes('http:')){
-		url = 'http:'+url;
-	}
-	return url;
 }
 
 function downloadImage(url,fileId){
