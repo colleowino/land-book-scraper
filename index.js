@@ -50,19 +50,19 @@ function parseBody(body){
 	return fixUrlPrefix(img);
 }
 
-// should start at 179
+// should start at 179 -> 2639 , divide to get per page
 function loadPage(id){
 	return new Promise(function(resolve, reject){
 		var url = 'https://land-book.com/websites/'+id;
 		request(url,function(err,resp,body){
-			if(!err){
-				console.log("loaded page: "+id);
+			//if(!err){
+				//console.log("loaded page: "+id);
 				resolve(parseBody(body));
-			}
-			else{
-				console.log("unable to load page: "+id);
-				reject(-1);
-			}
+			//}
+			//else{
+				//console.log("unable to load page: "+id);
+				//reject(-1);
+			//}
 		});
 
 	});
@@ -100,24 +100,26 @@ function getpromises(pg,groupsize){
 	console.log(firstitem, maxitems);
 
 	for(var i = firstitem; i <= maxitems; i++){
-		console.log(i);
+		todownload.push(loadPage(i));
+		//console.log(i);
 	}
 }
 
-getpromises(3, 15);
+// starting page
+getpromises(19, 10);
 
-
-
-
+//console.log(todownload);
 
 //for(var i=10; i < 15; i++){
 	//promises.push(loadPage(i));
 //}
 
-//$q.all(promises).then(function(response){
-	//console.log(response);
-	//console.log("app pages downloaded");
-//});
+$q.all(todownload).then(function(imgLinks){
+	return imgLinks;
+}).then( function(data){
+	console.log(data);
+	console.log("about to download images");
+});
 
 
 //loadPage(2080).then(function(body){
