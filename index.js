@@ -19,7 +19,7 @@ function getExtName(url){
 
 // landbook images seem to lack 'http:' prefix
 function fixUrlPrefix(url){
-	if(!url.includes('http:')){
+	if(url && !url.includes('http:')){
 		url = 'http:'+url;
 	}
 	return url;
@@ -55,34 +55,42 @@ function loadPage(id){
 	return new Promise(function(resolve, reject){
 		var url = 'https://land-book.com/websites/'+id;
 		request(url,function(err,resp,body){
-			if(!err)
+			if(!err){
 				console.log("loaded page: "+id);
 				resolve(parseBody(body));
-		});
-
-	});
-}
-
-var pgNum = 181;
-
-// load the pages
-
-function readPageDownloadImage(pgNum){
-	return new Promise(function (resolve, reject){
-		loadPage(pgNum).then(function(imgLink){
-			if(downloadImage(imgLink,pgNum)){
-				resolve(pgNum+1);
-			}else{
-				console.log("couldn't /read download image");
+			}
+			else{
+				console.log("unable to load page: "+id);
 				reject(-1);
 			}
 		});
+
 	});
 }
 
-//readPageDownloadImage(183).then(function(imgId){
-	//console.log(imgId);
-//});
+
+// load the pages
+function readPageDownloadImage(pgNum){
+	return new Promise(function (resolve, reject){
+		loadPage(pgNum).then(function(imgLink){
+
+			if(imgLink){
+				downloadImage(imgLink,pgNum);
+				resolve(pgNum+1);
+			}else{
+				console.log("couldn't read image link");
+				reject(-1);
+			}
+
+		});
+	});
+}
+
+var pgNum = 11;
+
+readPageDownloadImage(pgNum).then(function(imgId){
+	console.log(imgId);
+});
 
 //var todownload = [];
 
