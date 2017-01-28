@@ -5,15 +5,18 @@ var fs = require('fs');
 var path = require('path');
 
 /* TODO: move test methods to test suit */
-function testImageDownloader(){
-	var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292'
+var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292'
 
+function testImageDownloader(imgLink){
 	downloadImage(imgLink,1).then(function(result,reject){
 		console.log('downloaded '+result);
 	});
 }
 
-testImageDownloader();
+function getExtName(url){
+	return path.extname(url).split('?')[0];
+}
+
 
 // should start at 179
 function loadPage(id){
@@ -27,6 +30,8 @@ function loadPage(id){
 
 	});
 }
+
+
 
 function parseBody(body){
 	var $ = cheerio.load(body);
