@@ -5,7 +5,7 @@ var fs = require('fs');
 var path = require('path');
 
 /* TODO: move test methods to test suit */
-var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292'
+var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292';
 
 function testImageDownloader(imgLink){
 	downloadImage(imgLink,1).then(function(result,reject){
@@ -81,32 +81,46 @@ function getPgPromises(pg,groupsize){
 	}
 }
 
-var itemCount = 10;
-var totalPages = 5;
-
 function getPage(startPage){
+	return new Promise( function(resolve,reject){
+		// starting page
+		getPgPromises(startPage, itemCount);
+		var pgNum = 11;
 
-	// starting page
-	getPgPromises(startPage, itemCount);
-	var pgNum = 11;
+		$q.all(todownload).then(function(imgLinks){
+			return imgLinks;
+		}).then( function(data){
 
-	$q.all(todownload).then(function(imgLinks){
-		return imgLinks;
-	}).then( function(data){
+			var imgPromises = [];
 
-		var imgPromises = [];
+			data.forEach(function(site){
+				imgPromises.push(downloadImage(site.id,site.imgurl));
+			});
 
-		data.forEach(function(site){
-			imgPromises.push(downloadImage(site.id,site.imgurl));
+			$q.all(imgPromises).then(function(res){
+				//console.log(res);
+				resolve(startPage + 1);
+			});
+
 		});
-
-		$q.all(imgPromises).then(function(res){
-			console.log(res);
-		});
-		//console.log("about toownload images");
 	});
-
 }
 
-getPage(19);
+/// check if the highest page reached.
+
+function cyclone(startPage){
+	console.log("\n -- getting a page -- ");
+	getPage(startPage).then(function(next){
+		console.log("next should be: "+next);
+		if (next <= lastPage)
+			cyclone(next);
+	});
+}
+
+var itemCount = 10;
+var lastPage = 20;
+// cylone 19, 20
+cyclone(19);
+	
+
 
