@@ -13,8 +13,6 @@ function testImageDownloader(folderId, imgId, imgLink){
 	});
 }
 
-testImageDownloader(1,50,imgLink);
-
 function getExtName(url){
 	return path.extname(url).split('?')[0];
 }
@@ -92,7 +90,6 @@ function getPage(startPage){
 	return new Promise( function(resolve,reject){
 		// starting page
 		getPgPromises(startPage, itemCount);
-		var pgNum = 11;
 
 		$q.all(todownload).then(function(imgLinks){
 			return imgLinks;
@@ -101,7 +98,10 @@ function getPage(startPage){
 			var imgPromises = [];
 
 			data.forEach(function(site){
-				imgPromises.push(downloadImage(site.id,site.imgurl));
+
+				if(site.imgurl){
+					imgPromises.push(downloadImage(startPage,site.id,site.imgurl));
+				}
 			});
 
 			$q.all(imgPromises).then(function(res){
@@ -127,7 +127,7 @@ function cyclone(startPage){
 var itemCount = 10;
 var lastPage = 20;
 // cylone 19, 20
-//cyclone(19);
+cyclone(19);
 	
 
 
