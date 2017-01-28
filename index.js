@@ -88,17 +88,23 @@ function readPageDownloadImage(pgNum){
 
 var pgNum = 11;
 
-readPageDownloadImage(pgNum).then(function(imgId){
-	console.log(imgId);
-});
+//readPageDownloadImage(pgNum).then(function(imgId){
+	//console.log(imgId);
+//});
 
-//var todownload = [];
+var todownload = [];
 
-//function getpromises(pg,groupsize){
-	//var maxitems = (pg * groupsize);
-	//var firstitem = max - (groupsize - 1);
+function getpromises(pg,groupsize){
+	var maxitems = (pg * groupsize);
+	var firstitem = maxitems - (groupsize - 1);
+	console.log(firstitem, maxitems);
 
-//}
+	for(var i = firstitem; i <= maxitems; i++){
+		console.log(i);
+	}
+}
+
+getpromises(3, 15);
 
 
 
