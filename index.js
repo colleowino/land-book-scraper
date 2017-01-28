@@ -7,11 +7,13 @@ var path = require('path');
 /* TODO: move test methods to test suit */
 var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292';
 
-function testImageDownloader(imgLink){
-	downloadImage(imgLink,1).then(function(result,reject){
+function testImageDownloader(folderId, imgId, imgLink){
+	downloadImage('1','50',imgLink).then(function(result,reject){
 		console.log('downloaded '+result);
 	});
 }
+
+testImageDownloader(1,50,imgLink);
 
 function getExtName(url){
 	return path.extname(url).split('?')[0];
@@ -25,18 +27,23 @@ function fixUrlPrefix(url){
 	return url;
 }
 
-function downloadImage(fileId,url){
-	var downloadDir = 'downloads';
+function downloadImage(folderId,fileId,url){
+	var downloadDir = path.join('downloads',folderId.toString());
 
 	if(!fs.existsSync(downloadDir))
 		fs.mkdirSync(downloadDir);
 
 	return new Promise(function(resolve,reject){
-		var filename = path.join(downloadDir,fileId.toString() + getExtName(url));
+		try{
+			var filename = path.join(downloadDir,fileId.toString() + getExtName(url));
+			request(fixUrlPrefix(url)).pipe(fs.createWriteStream(filename)).on('close',function(){
+				resolve(fileId);
+			});
+		}
+		catch(error){
+			console.log(error);
+		}
 		
-		request(fixUrlPrefix(url)).pipe(fs.createWriteStream(filename)).on('close',function(){
-			resolve(fileId);
-		});
 
 	});
 
@@ -120,7 +127,7 @@ function cyclone(startPage){
 var itemCount = 10;
 var lastPage = 20;
 // cylone 19, 20
-cyclone(19);
+//cyclone(19);
 	
 
 
