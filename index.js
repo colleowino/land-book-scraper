@@ -44,10 +44,11 @@ function downloadImage(url,fileId){
 
 function parseBody(body){
 	var $ = cheerio.load(body);
-	//var title = $('h2').text();
-	//var homepage = $('.icon-world + a').text();
+	var title = $('h2').text();
+	var homepage = $('.icon-world + a').text();
 	var img = $('#website-screenshot').attr('src');
-	return fixUrlPrefix(img);
+
+	return [title,fixUrlPrefix(img),homepage];
 }
 
 // should start at 179 -> 2639 , divide to get per page
@@ -107,12 +108,6 @@ function getpromises(pg,groupsize){
 
 // starting page
 getpromises(19, 10);
-
-//console.log(todownload);
-
-//for(var i=10; i < 15; i++){
-	//promises.push(loadPage(i));
-//}
 
 $q.all(todownload).then(function(imgLinks){
 	return imgLinks;
