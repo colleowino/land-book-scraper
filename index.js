@@ -25,7 +25,7 @@ function fixUrlPrefix(url){
 	return url;
 }
 
-function downloadImage(url,fileId){
+function downloadImage(fileId,url){
 	var downloadDir = 'downloads';
 
 	if(!fs.existsSync(downloadDir))
@@ -74,35 +74,39 @@ var todownload = [];
 function getPgPromises(pg,groupsize){
 	var maxitems = (pg * groupsize);
 	var firstitem = maxitems - (groupsize - 1);
-	console.log(firstitem, maxitems);
+	console.log("woking on: ",firstitem, maxitems);
 
 	for(var i = firstitem; i <= maxitems; i++){
 		todownload.push(loadPage(i));
 	}
 }
 
+var itemCount = 10;
+var totalPages = 5;
 
-// starting page
-getPgPromises(19, 10);
-var pgNum = 11;
+function getPage(startPage){
 
-$q.all(todownload).then(function(imgLinks){
-	return imgLinks;
-}).then( function(data){
+	// starting page
+	getPgPromises(startPage, itemCount);
+	var pgNum = 11;
 
-	//var links = data.map(function(page){
-		//return page[1];
-	//});
+	$q.all(todownload).then(function(imgLinks){
+		return imgLinks;
+	}).then( function(data){
 
-	//downloadImage(links[0],51);
+		var imgPromises = [];
 
-	var imgPromises = [];
+		data.forEach(function(site){
+			imgPromises.push(downloadImage(site.id,site.imgurl));
+		});
 
-	data.forEach(function(site){
-		console.log(site.title);
+		$q.all(imgPromises).then(function(res){
+			console.log(res);
+		});
+		//console.log("about toownload images");
 	});
 
-	//console.log(links);
-	//console.log("about to download images");
-});
+}
+
+getPage(19);
 
