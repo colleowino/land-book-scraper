@@ -85,9 +85,10 @@ function loadPage(id){
 	});
 }
 
-var todownload = [];
 
 function getPgPromises(pg,groupsize){
+	var todownload = [];
+
 	var maxitems = (pg * groupsize);
 	var firstitem = maxitems - (groupsize - 1);
 	console.log("woking on: ",firstitem, maxitems);
@@ -95,14 +96,16 @@ function getPgPromises(pg,groupsize){
 	for(var i = firstitem; i <= maxitems; i++){
 		todownload.push(loadPage(i));
 	}
+	
+	return todownload;
 }
 
 function getPage(startPage){
 	return new Promise( function(resolve,reject){
 		// starting page
-		getPgPromises(startPage, itemCount);
+		var pgPromises = getPgPromises(startPage, itemCount);
 
-		$q.all(todownload).then(function(imgLinks){
+		$q.all(pgPromises).then(function(imgLinks){
 			return imgLinks;
 		}).then( function(data){
 
@@ -113,12 +116,13 @@ function getPage(startPage){
 			Site.create({
 				title: site.title, img_url: site.imgurl, homepage: site.url, site_id:site.id 
 			}).then(function(site){
-				//console.log(site.homepage);
+				// something with the data
 			});
 
 			if(site.imgurl){
 				imgPromises.push(downloadImage(startPage,site.id,site.imgurl));
 			}
+
 		});
 
 			$q.all(imgPromises).then(function(res){
@@ -139,12 +143,9 @@ function cyclone(startPage){
 	});
 }
 
-
-
-var itemCount = 20;
+var itemCount = 100;
 var lastPage = 27;
 // cylone 19, 20
-cyclone(9);
-	
+cyclone(2);
 
 
