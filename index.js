@@ -14,6 +14,13 @@ var sequelize = new Sequelize('main', null, null, {
   storage: process.env.DB
 });
 
+var Site = sequelize.define('site',{
+	title: Sequelize.STRING,
+	img_url: Sequelize.TEXT,
+	homepage: Sequelize.TEXT,
+	site_id: Sequelize.INTEGER
+});
+Site.sync({force:true});
 
 /* TODO: move test methods to test suit */
 var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292';
@@ -37,13 +44,14 @@ function fixUrlPrefix(url){
 }
 
 function downloadImage(folderId,fileId,url){
-	var downloadDir = path.join('downloads',folderId.toString());
-
-	if(!fs.existsSync(downloadDir))
-		fs.mkdirSync(downloadDir);
-
 	return new Promise(function(resolve,reject){
 		try{
+
+			var downloadDir = path.join('downloads',folderId.toString());
+
+			if(!fs.existsSync(downloadDir))
+				fs.mkdirSync(downloadDir);
+
 			var filename = path.join(downloadDir,fileId.toString() + getExtName(url));
 			request(fixUrlPrefix(url)).pipe(fs.createWriteStream(filename)).on('close',function(){
 				resolve(fileId);
@@ -102,10 +110,16 @@ function getPage(startPage){
 
 			data.forEach(function(site){
 
-				if(site.imgurl){
-					imgPromises.push(downloadImage(startPage,site.id,site.imgurl));
-				}
+			Site.create({
+				title: site.title, img_url: site.imgurl, homepage: site.url, site_id:site.id 
+			}).then(function(site){
+				//console.log(site.homepage);
 			});
+
+			if(site.imgurl){
+				imgPromises.push(downloadImage(startPage,site.id,site.imgurl));
+			}
+		});
 
 			$q.all(imgPromises).then(function(res){
 				//console.log(res);
@@ -125,19 +139,12 @@ function cyclone(startPage){
 	});
 }
 
-var Site = sequelize.define('site',{
-	title: Sequelize.STRING,
-	img_url: Sequelize.TEXT,
-	homepage: Sequelize.TEXT,
-	site_id: Sequelize.TEXT
-});
 
-Site.sync({force: true});
 
-var itemCount = 10;
-var lastPage = 20;
+var itemCount = 20;
+var lastPage = 27;
 // cylone 19, 20
-//cyclone(19);
+cyclone(9);
 	
 
 
