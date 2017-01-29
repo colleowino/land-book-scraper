@@ -49,5 +49,8 @@ jspm_packages
 # dotenv environment variables file
 .env
 
+# folder where screenshots are downloaded
 downloads
-sites.db
+
+# ignore metadata saved in sqlite
+*.db
