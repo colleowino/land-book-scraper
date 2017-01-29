@@ -16,6 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "cheerio": "^0.22.0",
+    "node-env-file": "^0.1.8",
     "request": "^2.79.0",
     "sequelize": "^2.0.0-rc1",
     "sequelize-cli": "^2.5.1",

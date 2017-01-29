@@ -3,6 +3,17 @@ var cheerio = require('cheerio');
 var $q = require('q');
 var fs = require('fs');
 var path = require('path');
+var env = require('node-env-file');
+var Sequelize = require('sequelize');
+
+env(__dirname + '/.env');
+
+var sequelize = new Sequelize('main', null, null, {
+  host: 'localhost',
+  dialect: 'sqlite',
+  storage: process.env.DB
+});
+
 
 /* TODO: move test methods to test suit */
 var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292';
@@ -41,7 +52,6 @@ function downloadImage(folderId,fileId,url){
 		catch(error){
 			console.log(error);
 		}
-		
 
 	});
 
@@ -61,14 +71,7 @@ function loadPage(id){
 	return new Promise(function(resolve, reject){
 		var url = 'https://land-book.com/websites/'+id;
 		request(url,function(err,resp,body){
-			//if(!err){
-				//console.log("loaded page: "+id);
 				resolve(parseBody(id,body));
-			//}
-			//else{
-				//console.log("unable to load page: "+id);
-				//reject(-1);
-			//}
 		});
 
 	});
@@ -113,8 +116,6 @@ function getPage(startPage){
 	});
 }
 
-/// check if the highest page reached.
-
 function cyclone(startPage){
 	console.log("\n -- getting a page -- ");
 	getPage(startPage).then(function(next){
@@ -124,10 +125,19 @@ function cyclone(startPage){
 	});
 }
 
+var Site = sequelize.define('site',{
+	title: Sequelize.STRING,
+	img_url: Sequelize.TEXT,
+	homepage: Sequelize.TEXT,
+	site_id: Sequelize.TEXT
+});
+
+Site.sync({force: true});
+
 var itemCount = 10;
 var lastPage = 20;
 // cylone 19, 20
-cyclone(19);
+//cyclone(19);
 	
 
 
