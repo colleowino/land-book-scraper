@@ -16,6 +16,9 @@
   "license": "ISC",
   "dependencies": {
     "cheerio": "^0.22.0",
-    "request": "^2.79.0"
+    "request": "^2.79.0",
+    "sequelize": "^2.0.0-rc1",
+    "sequelize-cli": "^2.5.1",
+    "sqlite3": "^3.1.8"
   }
 }
