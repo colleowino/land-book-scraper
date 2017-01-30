@@ -9,6 +9,7 @@ var Sequelize = require('sequelize');
 env(__dirname + '/.env');
 
 var sequelize = new Sequelize('main', null, null, {
+	logging: false,
   host: 'localhost',
   dialect: 'sqlite',
   storage: process.env.DB
@@ -28,6 +29,7 @@ var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/website
 function testImageDownloader(folderId, imgId, imgLink){
 	downloadImage('1','50',imgLink).then(function(result,reject){
 		console.log('downloaded '+result);
+		
 	});
 }
 
@@ -43,9 +45,10 @@ function fixUrlPrefix(url){
 	return url;
 }
 
+var imageCount = 0;
+
 function downloadImage(folderId,fileId,url){
 	return new Promise(function(resolve,reject){
-		try{
 
 			var downloadDir = path.join('downloads',folderId.toString());
 
@@ -53,14 +56,27 @@ function downloadImage(folderId,fileId,url){
 				fs.mkdirSync(downloadDir);
 
 			var filename = path.join(downloadDir,fileId.toString() + getExtName(url));
-			request(fixUrlPrefix(url)).pipe(fs.createWriteStream(filename)).on('close',function(){
+			var wstream = fs.createWriteStream(filename);
+
+			if (fileId == 1502){
+				console.log("about to reject");
+				reject(1502);
+			}
+
+			var req = request(fixUrlPrefix(url));
+
+			var pipe = req.pipe(wstream);
+				
+			pipe.on('close', function(){
+				//console.log('got:'+fileId+" sofar: "+imageCount);
 				resolve(fileId);
 			});
-		}
-		catch(error){
-			console.log(error);
-		}
 
+			pipe.on('error', function(err){
+				console.log('\n\n\nsomething went wrong');
+				console.log(err);
+				reject(fileId);
+			});
 	});
 
 }
@@ -115,37 +131,70 @@ function getPage(startPage){
 
 			Site.create({
 				title: site.title, img_url: site.imgurl, homepage: site.url, site_id:site.id 
-			}).then(function(site){
-				// something with the data
-			});
+			}).then(function(site){});
 
 			if(site.imgurl){
-				imgPromises.push(downloadImage(startPage,site.id,site.imgurl));
+				imageCount++;
+				//imgPromises.push(downloadImage(startPage,site.id,site.imgurl));
 			}
 
 		});
 
+			console.log("\n -- about to download images -- ");
 			$q.all(imgPromises).then(function(res){
 				//console.log(res);
 				resolve(startPage + 1);
+			}).catch(function(bug){
+				console.log("uggly");
+				console.log(bug);
+				reject(bug);
 			});
 
+		})
+		.catch(function(err){
+			console.log(err);
 		});
+
 	});
 }
 
 function cyclone(startPage){
-	console.log("\n -- getting a page -- ");
-	getPage(startPage).then(function(next){
-		console.log("next should be: "+next);
-		if (next <= lastPage)
+	if(startPage <= lastPage){
+		//console.log("\n -- getting a page -- ");
+
+		getPage(startPage).then(function(next){
+			console.log("next should be: "+next);
 			cyclone(next);
-	});
+		}, function(reject){
+			console.log('rejected: '+reject);
+		}).catch(function(err){
+			console.log("something went wrong");
+			console.log(err);
+		});
+	} 
+	else{
+		console.log("that's all folks");
+		return 'done';
+	}
+
 }
 
+function twister(pg){
+	if(pg <= lastPg){
+		console.log('visiting page: '+pg);
+		var newpage = pg+1;
+		twister(newpage)
+		//magic that returns a different value
+	}else{
+		console.log('visited everypage out there');
+	}
+}
+var lastPg = 19;
 var itemCount = 100;
 var lastPage = 27;
 // cylone 19, 20
-cyclone(2);
+//twister(16);
+cyclone(16);
+
 
 
