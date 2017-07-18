@@ -97,41 +97,75 @@ function extractPages(pgNum){
 
 }
 
-// getPage
-// getPagePromises
-// scrapePages, getImageUrls
-var pg = 2;
-var groupsize = 100;
+function loadScreenshot(filename,url){
+	return new Promise(function(resolve, reject){
+		var pipe = request(url).pipe(fs.createWriteStream(filename));
+
+		pipe.on("finish",function(){
+			console.log("downloaded: "+filename);
+			resolve("success");
+		});
+
+		pipe.on("error",function(err){
+			reject(err);
+		});
+
+	});
+}
+
+
+function downloadFolder(pg,groupsize){
 
 var pgPromises = getPgPromises(pg,groupsize);
+var downloadDir = path.join('downloads',pg.toString());
 
 $q.all(pgPromises).then(function(scrapedPages){
 	return scrapedPages;
 }).then(function(scrapedPages){
 		console.log("fulfilled");
 
-		var downloadDir = path.join('downloads',pg.toString());
-
 		if(!fs.existsSync(downloadDir))
 			fs.mkdirSync(downloadDir);
 
+		var imgRequests = [];
 		for(var i = 0; i < scrapedPages.length; i++){
 			var screenshot = scrapedPages[i];
 
 			if(screenshot != undefined){
-				console.log(screenshot);
-
 				var imgUrl = screenshot.imgurl;
-				var filename = path.join(downloadDir,screenshot.id + getExtName(imgUrl));
-				var wstream = fs.createWriteStream(filename);
-				var req = request(fixUrlPrefix(imgUrl));
+				var ext = getExtName(imgUrl);
+				var filename = path.join(downloadDir,screenshot.id + ext);
+
+				if(fs.existsSync(filename)){
+					console.log("Already downloaded "+screenshot.id);
+				} else{
+					imgRequests.push(loadScreenshot(filename,imgUrl));
+				}
 
 			}
 		}
+
+		$q.all(imgRequests).then(function(downloaded){
+			return downloaded;
+		}).then(function(){
+				console.log("folder downloaded: "+pg);
+				return "yellow";
+		}).catch(function(error){
+			console.log("->boom! "+error);
+		});
 
 }, function(reason){
 		console.log("rejected");
 }).catch(function(error){
 		console.log("boom! "+error);
 });
+
+}
+
+// getPage
+// getPagePromises
+// scrapePages, getImageUrls
+var pg = 2;
+var groupsize = 100;
+var color = downloadFolder(pg,groupsize);
 
