@@ -23,16 +23,6 @@ var Site = sequelize.define('site',{
 });
 Site.sync({force:true});
 
-/* TODO: move test methods to test suit */
-var imgLink = 'http://s3-eu-central-1.amazonaws.com/land-book-production/websites/screenshots/000/001/800/large/a084c455-2baa-403a-b74d-38a0477aa6f8.jpg?1476078292';
-
-function testImageDownloader(folderId, imgId, imgLink){
-	downloadImage('1','50',imgLink).then(function(result,reject){
-		console.log('downloaded '+result);
-		
-	});
-}
-
 function getExtName(url){
 	return path.extname(url).split('?')[0];
 }
@@ -45,49 +35,15 @@ function fixUrlPrefix(url){
 	return url;
 }
 
-var imageCount = 0;
-
-function downloadImage(folderId,fileId,url){
-	return new Promise(function(resolve,reject){
-
-			var downloadDir = path.join('downloads',folderId.toString());
-
-			if(!fs.existsSync(downloadDir))
-				fs.mkdirSync(downloadDir);
-
-			var filename = path.join(downloadDir,fileId.toString() + getExtName(url));
-			var wstream = fs.createWriteStream(filename);
-
-			if (fileId == 1502){
-				console.log("about to reject");
-				reject(1502);
-			}
-
-			var req = request(fixUrlPrefix(url));
-
-			var pipe = req.pipe(wstream);
-				
-			pipe.on('close', function(){
-				//console.log('got:'+fileId+" sofar: "+imageCount);
-				resolve(fileId);
-			});
-
-			pipe.on('error', function(err){
-				console.log('\n\n\nsomething went wrong');
-				console.log(err);
-				reject(fileId);
-			});
-	});
-
-}
-
 function parseBody(id,body){
 	var $ = cheerio.load(body);
 	var title = $('h2').text();
 	var homepage = $('.icon-world + a').text();
 	var img = $('#website-screenshot').attr('src');
 
-	return {'id':id,'title':title,'imgurl':fixUrlPrefix(img),'url':homepage};
+	if(img){
+		return {'id':id.toString(),'imgurl':fixUrlPrefix(img),'url':homepage};
+	}
 }
 
 // should start at 179 -> 2639 , divide to get per page
@@ -95,13 +51,16 @@ function loadPage(id){
 	return new Promise(function(resolve, reject){
 		var url = 'https://land-book.com/websites/'+id;
 		request(url,function(err,resp,body){
-				resolve(parseBody(id,body));
+				var pageObject = parseBody(id,body);
+				resolve(pageObject);
 		});
 
 	});
 }
 
-
+/* returns pending promises for each screenshot 
+ * based on groupsize per folder 
+ */
 function getPgPromises(pg,groupsize){
 	var todownload = [];
 
@@ -110,57 +69,16 @@ function getPgPromises(pg,groupsize){
 	console.log("woking on: ",firstitem, maxitems);
 
 	for(var i = firstitem; i <= maxitems; i++){
-		todownload.push(loadPage(i));
+		var downloadedPage = loadPage(i);
+		todownload.push(downloadedPage);
 	}
 	
 	return todownload;
 }
 
-function getPage(startPage){
-	return new Promise( function(resolve,reject){
-		// starting page
-		var pgPromises = getPgPromises(startPage, itemCount);
-
-		$q.all(pgPromises).then(function(imgLinks){
-			return imgLinks;
-		}).then( function(data){
-
-			var imgPromises = [];
-
-			data.forEach(function(site){
-
-			Site.create({
-				title: site.title, img_url: site.imgurl, homepage: site.url, site_id:site.id 
-			}).then(function(site){});
-
-			if(site.imgurl){
-				imageCount++;
-				//imgPromises.push(downloadImage(startPage,site.id,site.imgurl));
-			}
-
-		});
-
-			console.log("\n -- about to download images -- ");
-			$q.all(imgPromises).then(function(res){
-				//console.log(res);
-				resolve(startPage + 1);
-			}).catch(function(bug){
-				console.log("uggly");
-				console.log(bug);
-				reject(bug);
-			});
-
-		})
-		.catch(function(err){
-			console.log(err);
-		});
-
-	});
-}
-
-function cyclone(startPage){
+function extractPages(pgNum){
 	if(startPage <= lastPage){
-		//console.log("\n -- getting a page -- ");
+		console.log("\n -- getting a page -- ");
 
 		getPage(startPage).then(function(next){
 			console.log("next should be: "+next);
@@ -179,22 +97,41 @@ function cyclone(startPage){
 
 }
 
-function twister(pg){
-	if(pg <= lastPg){
-		console.log('visiting page: '+pg);
-		var newpage = pg+1;
-		twister(newpage)
-		//magic that returns a different value
-	}else{
-		console.log('visited everypage out there');
-	}
-}
-var lastPg = 19;
-var itemCount = 100;
-var lastPage = 27;
-// cylone 19, 20
-//twister(16);
-cyclone(16);
+// getPage
+// getPagePromises
+// scrapePages, getImageUrls
+var pg = 2;
+var groupsize = 100;
 
+var pgPromises = getPgPromises(pg,groupsize);
 
+$q.all(pgPromises).then(function(scrapedPages){
+	return scrapedPages;
+}).then(function(scrapedPages){
+		console.log("fulfilled");
+
+		var downloadDir = path.join('downloads',pg.toString());
+
+		if(!fs.existsSync(downloadDir))
+			fs.mkdirSync(downloadDir);
+
+		for(var i = 0; i < scrapedPages.length; i++){
+			var screenshot = scrapedPages[i];
+
+			if(screenshot != undefined){
+				console.log(screenshot);
+
+				var imgUrl = screenshot.imgurl;
+				var filename = path.join(downloadDir,screenshot.id + getExtName(imgUrl));
+				var wstream = fs.createWriteStream(filename);
+				var req = request(fixUrlPrefix(imgUrl));
+
+			}
+		}
+
+}, function(reason){
+		console.log("rejected");
+}).catch(function(error){
+		console.log("boom! "+error);
+});
 
