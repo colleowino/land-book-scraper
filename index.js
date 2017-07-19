@@ -93,6 +93,20 @@ function loadScreenshot(filename,url){
 	});
 }
 
+function batchDownload(imgPromises,batchSize){
+	return new Promise(function(resolve,reject){
+
+		var imageBatches = [];
+
+		$q.all(imgPromises).then(function(status){
+			return status;
+		}).then(function(){
+			resolve("success");
+		});
+
+	});
+}
+
 
 function downloadFolder(pg,lastPage,groupsize){
 
@@ -127,10 +141,8 @@ function downloadFolder(pg,lastPage,groupsize){
 
 					}
 				}
-
-				$q.all(imgRequests).then(function(downloaded){
-					return downloaded;
-				}).then(function(){
+				
+				batchDownload(imgRequests,20).then(function(){
 						console.log("folder downloaded: "+pg+"\n");
 						pg++;
 						downloadFolder(pg,lastPage,groupsize);
@@ -156,6 +168,6 @@ function downloadFolder(pg,lastPage,groupsize){
 // scrapePages, getImageUrls
 var pg = 1;
 var groupsize = 100;
-var lastPage = 4;
+var lastPage = 2;
 downloadFolder(pg,lastPage,groupsize);
 
