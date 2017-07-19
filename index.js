@@ -76,27 +76,6 @@ function getPgPromises(pg,groupsize){
 	return todownload;
 }
 
-function extractPages(pgNum){
-	if(startPage <= lastPage){
-		console.log("\n -- getting a page -- ");
-
-		getPage(startPage).then(function(next){
-			console.log("next should be: "+next);
-			cyclone(next);
-		}, function(reject){
-			console.log('rejected: '+reject);
-		}).catch(function(err){
-			console.log("something went wrong");
-			console.log(err);
-		});
-	} 
-	else{
-		console.log("that's all folks");
-		return 'done';
-	}
-
-}
-
 function loadScreenshot(filename,url){
 	return new Promise(function(resolve, reject){
 		var pipe = request(url).pipe(fs.createWriteStream(filename));
@@ -107,6 +86,7 @@ function loadScreenshot(filename,url){
 		});
 
 		pipe.on("error",function(err){
+			console.log("problem occured at "+filename);
 			reject(err);
 		});
 
@@ -114,58 +94,68 @@ function loadScreenshot(filename,url){
 }
 
 
-function downloadFolder(pg,groupsize){
+function downloadFolder(pg,lastPage,groupsize){
 
-var pgPromises = getPgPromises(pg,groupsize);
-var downloadDir = path.join('downloads',pg.toString());
+	if(pg <= lastPage){
 
-$q.all(pgPromises).then(function(scrapedPages){
-	return scrapedPages;
-}).then(function(scrapedPages){
-		console.log("fulfilled");
+		var downloadDir = path.join('downloads',pg.toString());
+		var pgPromises = getPgPromises(pg,groupsize);
 
-		if(!fs.existsSync(downloadDir))
-			fs.mkdirSync(downloadDir);
+		$q.all(pgPromises).then(function(scrapedPages){
+			return scrapedPages;
+		}).then(function(scrapedPages){
+				//console.log("fulfilled");
 
-		var imgRequests = [];
-		for(var i = 0; i < scrapedPages.length; i++){
-			var screenshot = scrapedPages[i];
+				if(!fs.existsSync(downloadDir))
+					fs.mkdirSync(downloadDir);
 
-			if(screenshot != undefined){
-				var imgUrl = screenshot.imgurl;
-				var ext = getExtName(imgUrl);
-				var filename = path.join(downloadDir,screenshot.id + ext);
+				var imgRequests = [];
 
-				if(fs.existsSync(filename)){
-					console.log("Already downloaded "+screenshot.id);
-				} else{
-					imgRequests.push(loadScreenshot(filename,imgUrl));
+				for(var i = 0; i < scrapedPages.length; i++){
+					var screenshot = scrapedPages[i];
+
+					if(screenshot != undefined){
+						var imgUrl = screenshot.imgurl;
+						var ext = getExtName(imgUrl);
+						var filename = path.join(downloadDir,screenshot.id + ext);
+
+						if(fs.existsSync(filename)){
+							console.log("Already downloaded "+screenshot.id);
+						} else{
+							imgRequests.push(loadScreenshot(filename,imgUrl));
+						}
+
+					}
 				}
 
-			}
-		}
+				$q.all(imgRequests).then(function(downloaded){
+					return downloaded;
+				}).then(function(){
+						console.log("folder downloaded: "+pg+"\n");
+						pg++;
+						downloadFolder(pg,lastPage,groupsize);
+				}).catch(function(error){
+					console.log("->boom! "+error);
+					reject(error);
+				});
 
-		$q.all(imgRequests).then(function(downloaded){
-			return downloaded;
-		}).then(function(){
-				console.log("folder downloaded: "+pg);
-				return "yellow";
+		}, function(reason){
+				console.log("rejected");
 		}).catch(function(error){
-			console.log("->boom! "+error);
+				console.log("boom! "+error);
+				reject(error);
 		});
 
-}, function(reason){
-		console.log("rejected");
-}).catch(function(error){
-		console.log("boom! "+error);
-});
-
+	} else{
+		console.log("Downloading complete");
+	}
 }
 
 // getPage
 // getPagePromises
 // scrapePages, getImageUrls
-var pg = 2;
+var pg = 1;
 var groupsize = 100;
-var color = downloadFolder(pg,groupsize);
+var lastPage = 4;
+downloadFolder(pg,lastPage,groupsize);
 
