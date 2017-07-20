@@ -76,39 +76,41 @@ function getPgPromises(pg,groupsize){
 	return todownload;
 }
 
-function loadScreenshot(filename,url){
-	return new Promise(function(resolve, reject){
-		var pipe = request(url).pipe(fs.createWriteStream(filename));
-
-		pipe.on("finish",function(){
-			console.log("downloaded: "+filename);
-			resolve("success");
-		});
-
-		pipe.on("error",function(err){
-			console.log("problem occured at "+filename);
-			reject(err);
-		});
-
-	});
-}
-
-function batchDownload(imgPromises,batchSize){
+function batchDownload(imgPromises,limit){
 	return new Promise(function(resolve,reject){
-
-		var imageBatches = [];
-
-		$q.all(imgPromises).then(function(status){
-			return status;
-		}).then(function(){
+		if(imgPromises.length == 0){
 			resolve("success");
-		});
+		}
+
+		var lastElement = limit < imgPromises.length ? limit : imgPromises.length;
+
+		var completed_download = 0;
+		var run = 0;
+
+		for(var i = 0; i < lastElement; i++){
+			var current = imgPromises.shift();
+			var pipe = request(current.url).pipe(fs.createWriteStream(current.filename));
+
+			pipe.on("finish",function(){
+				run++;
+				if(run == limit){
+					completed_download += run;
+					batchDownload(imgPromises,limit);
+				}
+				
+			});
+
+			pipe.on("error",function(err){
+				console.log("problem occured");
+			});
+
+		}
 
 	});
 }
 
 
-function downloadFolder(pg,lastPage,groupsize){
+function downloadFolder(pg,lastPage,groupsize,limit){
 
 	if(pg <= lastPage){
 
@@ -136,13 +138,14 @@ function downloadFolder(pg,lastPage,groupsize){
 						if(fs.existsSync(filename)){
 							console.log("Already downloaded "+screenshot.id);
 						} else{
-							imgRequests.push(loadScreenshot(filename,imgUrl));
+							imgRequests.push({"filename":filename,"url": imgUrl });
 						}
 
 					}
 				}
 				
-				batchDownload(imgRequests,20).then(function(){
+				var limit = 3;
+				batchDownload(imgRequests,limit).then(function(){
 						console.log("folder downloaded: "+pg+"\n");
 						pg++;
 						downloadFolder(pg,lastPage,groupsize);
@@ -166,7 +169,7 @@ function downloadFolder(pg,lastPage,groupsize){
 // getPage
 // getPagePromises
 // scrapePages, getImageUrls
-var pg = 1;
+var pg = 2;
 var groupsize = 100;
 var lastPage = 2;
 downloadFolder(pg,lastPage,groupsize);
